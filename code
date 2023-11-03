@@ -1,0 +1,182 @@
+**Up counter behavioral code**
+
+module upcounter(clk,rst,count);
+input clk,rst;
+output reg [2:0]count;
+always@(posedge clk) begin
+	if(rst)	count=0;
+	else count=count+1;
+
+end
+endmodule
+
+**Up counter using SRFF**
+
+`include "sr_ff.v"
+module upcounter(clk,rst,count);
+input clk,rst;
+output [2:0]count;
+and (s2,~count[2],count[1],count[0]);
+and (r2,count[2],count[1],count[0]);
+and (s1,~count[1],count[0]);
+and (r1,count[1],count[0]);
+and (s0,~count[0]);
+and (r0,count[0]);
+
+sr_ff u2(clk,rst,s2,r2,count[2]);
+sr_ff u1(clk,rst,s1,r1,count[1]);
+sr_ff u0(clk,rst,s0,r0,count[0]);
+endmodule
+
+**up counter using DFF**
+
+`include "dff_beh.v"
+module upcounter(clk,rst,count);
+input clk,rst;
+output [2:0]count;
+
+and (n1,~count[2],count[1],count[0]);
+and (n2,count[2],~count[1]);
+and (n3,count[2],~count[0]);
+or (n4,n1,n2,n3);
+xor (n5,count[1],count[0]);
+not (n6,count[0]);
+dff u2(clk,rst,n4,count[2]);
+dff u1(clk,rst,n5,count[1]);
+dff u0(clk,rst,n6,count[0]);
+endmodule
+
+**up counter using JKFF**
+
+`include "jk_ff.v"
+module upcounter(clk,rst,count);
+input clk,rst;
+output [2:0]count;
+
+and (j2,count[1],count[0]);
+and (k2,count[1],count[0]);
+buf(j1,count[0]);
+buf (k1,count[0]);
+buf (j0,1);
+buf (k0,1);
+
+jk_ff u2(clk,j2,k2,count[2]);
+jk_ff u1(clk,j1,k1,count[1]);
+jk_ff u0(clk,j0,k0,count[0]);
+endmodule
+
+**up counter testbench**
+
+//`include "upcounter_dff.v"
+//`include "upcounter_srff.v"
+`include "upcounter_jkff.v"
+//`include "upcounter.v"
+module tb();
+reg clk,rst;
+wire [2:0]count;
+upcounter dut(clk,rst,count);
+initial begin
+	clk=0;
+	forever #5 clk=~clk;
+end
+initial begin
+	rst=1;
+	@(posedge clk);
+	rst=0;
+	#200;
+	$finish;
+end
+endmodule
+
+**Down counter**
+
+module downcounter(clk,rst,count);
+input clk,rst;
+output reg [2:0]count;
+always@(posedge clk)begin
+	if(rst) begin
+		count=0;
+	end
+	else begin
+		count=count-1;
+	end
+end
+endmodule
+
+**down counter testbench**
+
+`include "downcounter.v"
+module tb();
+reg clk,rst;
+wire [2:0]count;
+downcounter dut(clk,rst,count);
+initial begin
+	clk=0;
+	forever #5 clk=~clk;
+end
+initial begin
+	rst=1;
+	@(posedge clk);
+	rst=0;
+	#200;
+	$finish;
+end
+endmodule
+
+**Gray counter**
+
+module gray_counter(clk,rst,count);
+input clk,rst;
+output reg [2:0]count;
+reg [2:0] bin_count;
+always@(posedge clk) begin
+	if(rst)begin
+		bin_count=0;
+	end	
+	else begin
+		bin_count=bin_count+1;
+		count[2]=bin_count[2];
+		count[1]=bin_count[2]^bin_count[1];
+		count[0]=bin_count[1]^bin_count[0];
+	end
+end
+endmodule
+
+**gray counter using DFF**
+
+`include "dff_beh.v"
+module gray_counter(clk,rst,count);
+input clk,rst;
+output [2:0]count;
+and (n1,count[1],~count[0]);
+and (n2,count[2],count[0]);
+or (d2,n1,n2);
+and (n3,count[1],~count[0]);
+and (n4,count[0],~count[2]);
+or (d1,n3,n4);
+xnor (d0,count[2],count[1]);
+dff u2(clk,rst,d2,count[2]);
+dff u1(clk,rst,d1,count[1]);
+dff u0(clk,rst,d0,count[0]);
+endmodule
+
+**testbench**
+
+`include "gray_counter.v"
+//`include "gray_counter_dff.v"
+module tb();
+reg clk,rst;
+wire [2:0]count;
+gray_counter dut(clk,rst,count);
+initial begin
+	clk=0;
+	forever #5 clk=~clk;
+end
+initial begin
+	rst=1;
+	@(posedge clk);
+	rst=0;
+	#200;
+	$finish;
+end
+endmodule
